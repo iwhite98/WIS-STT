@@ -27,25 +27,6 @@ from pytorch_lightning.plugins import DeepSpeedPlugin
 #wandb.init(dir='./wandb_dir')
 os.environ["WANDB_DIR"] = './wandb'
 
-'''
-env = LightningEnvironment()
-env.world_size = lambda: int(os.environ["WORLD_SIZE"])
-env.global_rank = lambda: int(os.environ["RANK"])
-
-#os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "smddp"
-ddp = DDPStrategy(
-  cluster_environment=env, 
-  #process_group_backend="smddp", 
-  accelerator="gpu",
-)
-  
-
-world_size = int(os.environ["WORLD_SIZE"])
-num_gpus = world_size#2#int(os.environ["SM_NUM_GPUS"])
-print('environment: ', os.environ['WORLD_SIZE'], os.environ['RANK'], os.environ['LOCAL_RANK'], os.environ.get("CUDA_VISIBLE_DEVICES", None))
-num_nodes = int(world_size/num_gpus)
-
-'''
 
 def get_parameters(cfg: DictConfig):
     logger = logging.getLogger(__name__)
@@ -115,38 +96,6 @@ def train(cfg: DictConfig):
 
     callbacks.append(RegularCheckpointing())
 
-    '''
-    runner = Trainer(
-        logger=loggers,
-        #gpus=2,
-        #gpus=cfg.general.gpus,
-        devices=cfg.general.gpus,
-        callbacks=callbacks,
-        weights_save_path=str(cfg.general.save_dir),
-        #strategy=DDPStrategy(find_unused_parameters=False), 
-        #sync_batchnorm=True, 
-        #strategy = 'ddp',
-        #accelerator='gpu',
-        **cfg.trainer,
-        #callbacks=[RegularCheckpointing()],
-        #default_root_dir=str(cfg.general.save_dir),
-    )
-    '''
-    '''
-    runner = Trainer(
-        logger=loggers,
-        #accelerator='gpu',
-        strategy=ddp, 
-        #sync_batchnorm=True, 
-        devices=cfg.general.gpus,
-        #callbacks=[RegularCheckpointing(), CustomLearningRateMonitor()],
-        callbacks = callbacks,
-        default_root_dir=str(cfg.general.save_dir),
-        **cfg.trainer,
-        num_nodes=num_nodes,
-    )
-    '''
-
     runner = Trainer(
         logger=loggers,
         accelerator='gpu',
@@ -169,69 +118,7 @@ def train(cfg: DictConfig):
         #precision=16
     )
 
-    #runner.fit(model)
-    
-    #runner.fit(model, ckpt_path="saved/Mask3D_ts_ps_ema12_2/checkpoint809")
-    #runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema12_2/checkpoint819")
-    #runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema12_2/checkpoint819")
-    #runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema12_2/checkpoint814")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema12_2/checkpoint879")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema12_2/checkpoint874")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema12_2/checkpoint809")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema12_2/checkpoint804")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema12_2/checkpoint799")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema12_2/checkpoint794")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema12_2/checkpoint789")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema12_2/checkpoint784")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema12_2/checkpoint779")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema12_2/checkpoint774")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema12_2/checkpoint769")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema12_2/checkpoint764")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema12_2/checkpoint759")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema12_2/checkpoint754")
-
-    
-
-            
-
-    #runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema12_2/checkpoint814")
-    #runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint964")
-    #runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint954")
-    #runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint959")
-    #runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint969")
-    #runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint794")
-    #runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint799")
-    #runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint804")
-    #runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint974")
-    #runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint809")
-    #runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint814")
-    #runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint819")
-    #runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint824")
-    #runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint829")
-    '''
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint939")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint934")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint929")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint924")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint919")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint914")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint909")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint904")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint899")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint894")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint889")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint884")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint879")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint874")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint869")
-    runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint864")
-    '''
-
-    #runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema9_150/checkpoint969")
-    #runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema9_150/checkpoint979")
-    #runner.fit(model, ckpt_path="saved/Mask3D_ts_ps_ema9_150_2/checkpoint")
-    #runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema9_150/checkpoint829")
-    #runner.validate(model, ckpt_path="saved/Mask3D_ts_ps_ema9_150/checkpoint899")
+    runner.fit(model)
 
 
     
@@ -259,8 +146,7 @@ def test(cfg: DictConfig):
             load_full_weights=True
             ),
     )
-    runner.test(model, ckpt_path="saved/Mask3D_ts_ps_ema12_2/checkpoint799")
-    #runner.test(model, ckpt_path="saved/Mask3D_ts_ps_ema11/checkpoint814")
+    runner.test(model, ckpt_path="saved/checkpoint")
 
 
 @hydra.main(
