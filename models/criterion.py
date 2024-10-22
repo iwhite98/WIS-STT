@@ -162,29 +162,12 @@ class SetCriterion(nn.Module):
             device=src_logits.device,
         )
         target_classes[idx] = target_classes_o
-        '''
-        print('1', src_logits.shape, target_classes.shape) ### 
-        print('target : ',targets[0]['labels'].shape, targets[0]['labels'])
-        print(indices[0][1].shape, indices)
-    
-        1 torch.Size([1, 100, 19]) torch.Size([1, 100])
-        target :  torch.Size([28]) tensor([  0,   4,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,  17,
-          4, 253,  12,   0, 253,   6,   6,   9,  15,  12,   0,   5,   5,  17], device='cuda:0')
-        torch.Size([28]) [(tensor([ 3,  8, 13, 23, 24, 34, 36, 38, 43, 45, 46, 47, 49, 51, 56, 61, 65, 71,
-        74, 76, 81, 82, 87, 88, 90, 94, 96, 98]), tensor([15, 18, 14,  8,  1, 12, 26, 22,  0, 16,  2,  6, 23, 10, 27, 19,  9, 11,
-        25, 24, 21, 17, 20,  3,  5,  7, 13,  4]))]
-        '''
-        
-        #print(targets[0]['labels'], target_classes)
-        #exit()
         loss_ce = F.cross_entropy(
             src_logits.transpose(1, 2),
             target_classes,
             self.empty_weight,
             ignore_index=253,
         )
-        #print('label', loss_ce, src_logits.transpose(1, 2)[0][0][:5])
-        #print(loss_ce, src_logits[0][0], target_classes[0][0])
         losses = {"loss_ce": loss_ce}
         return losses
 
@@ -203,8 +186,6 @@ class SetCriterion(nn.Module):
                 map = s_outputs["pred_masks"][batch_id][:, s_map_ids[batch_id]].T
                 target = targets[batch_id][mask_type][target_id]
                 target_mask = torch.zeros_like(map).bool()
-                #print(target_mask, target)
-                #exit()
                 target_mask[:, undet_idx] = target[:, undet_idx]#.float() #######check
                 
                 t_mask = t_outputs["pred_masks"][batch_id][undet_idx][:, t_map_ids[batch_id]].T.clone().detach()
@@ -234,15 +215,8 @@ class SetCriterion(nn.Module):
         loss_masks = []
         loss_dices = []
 
-        #print('output:', outputs['pred_masks'][0].shape) ## [1611, 100]= [M, K]
-        #print(mask_type, targets[0][mask_type].shape)
-        ##segment_mask torch.Size([28, 1611])  = [K_gt, M]
-        ##target_mask :  torch.Size([28, 1611]) = [K_gt, M]
-
         for batch_id in range(len(targets)):
 
-            #print(targets[batch_id][mask_type].shape, s_outputs['segment_features'][batch_id].shape)
-            #exit()
             det_idx = targets[batch_id]["segment_det_idx"] 
             
             if is_eval or (~det_idx).float().sum() == 0:
@@ -254,8 +228,6 @@ class SetCriterion(nn.Module):
                 map = s_outputs["pred_masks"][batch_id][:, s_map_ids[batch_id]].T
                 target = targets[batch_id][mask_type][target_id]
                 target_mask = torch.zeros_like(map).bool()
-                #print(target_mask, target)
-                #exit()
                 target_mask[:, det_idx] = target[:, det_idx]#.float() #######check
                 
                 t_mask = t_outputs["pred_masks"][batch_id][~det_idx][:, t_map_ids[batch_id]].T.clone().detach()
@@ -304,7 +276,6 @@ class SetCriterion(nn.Module):
         src_masks = s_outputs["pred_masks"]
         src_masks = src_masks[src_idx]
         masks = [t[mask_type] for t in targets]
-        # TODO use valid to mask invalid areas due to padding in loss
         target_masks, valid = nested_tensor_from_tensor_list(masks).decompose()
         target_masks = target_masks.to(src_masks)
         target_masks = target_masks[tgt_idx]
@@ -376,19 +347,10 @@ class SetCriterion(nn.Module):
             target = targets[batch_id]['segment_mask'][target_ids[batch_id]][:, det_idx].float() # N * P
             point_counts = target.sum(dim=1, keepdim=True).clamp(min=1)
             feature_sums = torch.mm(target, point_pcd)
-            #print(feature_sums.shape, point_counts.shape, query.shape)
-            #exit()
             feature_centers = feature_sums / point_counts
-            #print(feature_sums.shape, point_counts.shape)
-            #print(feature_sums[0][0], point_counts[0], feature_centers[0][0])
             mask_counts = pred_mask.sum(dim=1, keepdim=True).clamp(min=1)
             mask_sums = torch.mm(pred_mask, pcd)
             mask_centers = mask_sums / mask_counts
-            #print(pred_mask.shape, pcd.shape, mask_sums.shape, mask_counts.shape)
-
-            #print(mask_centers.shape, feature_centers.shape)
-            #print(mask_centers[0][:5], feature_centers[0][:5], pcd[0][:5])
-            #exit()
             ## F[P * C] -> FC[N * C]
             ## Q[N * C] * F[P * C] -> MC[N * P] -> 
             loss_center.append(F.mse_loss(mask_centers, feature_centers))
@@ -420,10 +382,6 @@ class SetCriterion(nn.Module):
             #print(s_mask.shape, loss)
 
         loss_mask = torch.sum(torch.stack(loss_masks))
-        #print('mask', loss_mask)
-        # del target_mask
-        #print(loss_mask)
-        #exit()
         return loss_mask  
 
 
@@ -456,11 +414,6 @@ class SetCriterion(nn.Module):
              targets: list of dicts, such that len(targets) == batch_size.
                       The expected keys in each dict depends on the losses applied, see each loss' doc
         """
-        #print('outputs : ', outputs.keys()) ##outputs :  dict_keys(['pred_logits', 'pred_masks', 'aux_outputs', 'sampled_coords', 'backbone_features'])
-        #print('targets : ', targets[0]['labels'].shape, targets[0]['masks'].shape, targets[0]['segment_mask'].shape)
-
-        ##targets :  torch.Size([28]) torch.Size([28, 164833]) torch.Size([28, 1611])
-        ## targets=[labels : [K_gt](element : label class), masks : [K_gt, M?], 'segmentation_mask': [K_gt, M]]
 
         outputs_without_aux = {
             k: v for k, v in outputs.items() if k != "aux_outputs"
